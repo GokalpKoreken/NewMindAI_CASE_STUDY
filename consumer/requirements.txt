@@ -1,0 +1,6 @@
+grpcio==1.65.1
+kafka-python==2.0.2
+protobuf==5.26.1
+psycopg[binary]==3.1.18
+redis==5.0.7
+pydantic==2.8.2
