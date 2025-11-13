@@ -13,13 +13,36 @@ End-to-end pipeline that produces synthetic customer comments, enriches them wit
 ## Prerequisites
 
 - Docker 24+
-- Docker Compose v2
+- Docker Compose v2 (or the legacy `docker-compose` CLI used in the commands below)
+
+### Linux setup
+
+```bash
+sudo apt update
+sudo apt install docker.io docker-compose
+docker --version
+docker-compose --version
+```
+
+> Confirm both binaries print versions before continuing. If Docker requires elevated privileges, add your user to the `docker` group or run Compose commands with `sudo`.
+
+### Windows setup
+
+1. Install Docker Desktop for Windows from https://docs.docker.com/desktop/install/windows/ (requires WSL 2 or Hyper-V).
+2. After installation, open PowerShell or Windows Terminal and verify versions:
+
+    ```powershell
+    docker --version
+    docker-compose --version
+    ```
+
+    Docker Desktop bundles Compose; if the legacy `docker-compose` binary is not available, use `docker compose` in subsequent commands.
 
 ## Bootstrapping
 
 ```bash
-docker compose build
-docker compose up
+docker-compose build
+docker-compose up
 ```
 
 > The first start downloads base images and applies the database schema from `db/init.sql`.
@@ -35,7 +58,7 @@ docker compose up
 - Tail processed comments as JSON:
 
   ```bash
-  docker compose logs -f comment-consumer
+  docker-compose logs -f comment-consumer
   ```
 
 ## Testing
@@ -74,5 +97,5 @@ Most defaults are set within `docker-compose.yml`. Adjust them there to tweak ti
 ## Cleanup
 
 ```bash
-docker compose down -v
+docker-compose down -v
 ```
