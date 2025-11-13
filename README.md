@@ -38,6 +38,16 @@ docker compose up
   docker compose logs -f comment-consumer
   ```
 
+## Testing
+
+- Run unit tests locally to verify cache behaviour:
+
+  ```bash
+  python -m pytest
+  ```
+
+- Continuous integration executes the same pytest suite on every push/pull request (see `.github/workflows/tests.yml`). The included `tests/test_consumer_cache.py` ensures duplicate comment texts reuse cached sentiment responses.
+
 ## REST API
 
 Once the stack is running, the API is available at `http://localhost:8000`.
