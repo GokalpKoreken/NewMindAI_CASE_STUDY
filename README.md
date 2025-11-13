@@ -28,7 +28,7 @@ docker-compose --version
 
 ### Windows setup
 
-1. Install Docker Desktop for Windows from https://docs.docker.com/desktop/install/windows/ (requires WSL 2 or Hyper-V).
+1. Install Docker Desktop for Windows from https://docs.docker.com/desktop/setup/install/windows-install/ (requires WSL 2 or Hyper-V).
 2. After installation, open PowerShell or Windows Terminal and verify versions:
 
     ```powershell
@@ -105,5 +105,5 @@ Most defaults are set within `docker-compose.yml`. Adjust them there to tweak ti
 ## Cleanup
 
 ```bash
-docker-compose down -v
+docker-compose down 
 ```
