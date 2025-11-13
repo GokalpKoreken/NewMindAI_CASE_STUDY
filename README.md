@@ -77,11 +77,18 @@ Once the stack is running, the API is available at `http://localhost:8000`.
 
 - `GET /healthz` – health probe.
 - `GET /comments` – list processed comments. Supports `sentiment` (`positive`, `negative`, `neutral`, `unknown`) and `limit` query parameters.
+- `GET /comments/export` – stream the same queryable dataset as CSV with `sentiment` and `limit` options, forcing a file download.
 
 Example:
 
 ```bash
 curl "http://localhost:8000/comments?sentiment=positive&limit=20"
+```
+
+Download as CSV:
+
+```bash
+curl -L "http://localhost:8000/comments/export?limit=100" -o comments.csv
 ```
 
 ## Environment Variables
@@ -91,7 +98,8 @@ Most defaults are set within `docker-compose.yml`. Adjust them there to tweak ti
 ## Development Notes
 
 - Services automatically retry connections to Kafka, Redis, PostgreSQL, and the gRPC endpoint.
-- Redis caches sentiments for 24 hours; change `CACHE_TTL_SECONDS` to tune deduplication horizons.
+- Redis caches sentiments for 24 hours inside the consumer service; change `CACHE_TTL_SECONDS` to tune deduplication horizons.
+- The REST API reads processed comments directly from PostgreSQL and does not use Redis or any additional caching layer.
 - The gRPC service enforces a 100 rps rate limit and introduces latency of `BASE_DELAY_SECONDS + (DELAY_PER_CHAR_SECONDS × text length)`.
 
 ## Cleanup
