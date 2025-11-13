@@ -1,0 +1,125 @@
+version: "3.9"
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    environment:
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_NODE_ID=1
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_CLUSTER_ID=llp7z9QeTnWy0lRrgH9d0Q
+      - CLUSTER_ID=llp7z9QeTnWy0lRrgH9d0Q
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka-data:/bitnami/kafka
+
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=appsecret
+      - POSTGRES_DB=comments
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  sentiment-service:
+    build:
+      context: .
+      dockerfile: sentiment_service/Dockerfile
+    container_name: sentiment-service
+    environment:
+      - GRPC_PORT=50051
+      - DROP_PROBABILITY=0.05
+      - RATE_LIMIT_PER_SECOND=100
+      - DELAY_PER_CHAR_SECONDS=0.005
+      - BASE_DELAY_SECONDS=0.05
+    ports:
+      - "50051:50051"
+    depends_on:
+      - kafka
+
+  producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    container_name: comment-producer
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - RAW_COMMENTS_TOPIC=raw-comments
+      - MIN_DELAY_SECONDS=0.1
+      - MAX_DELAY_SECONDS=10
+      - REUSE_PROBABILITY=0.3
+    depends_on:
+      - kafka
+
+  consumer:
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    container_name: comment-consumer
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - RAW_COMMENTS_TOPIC=raw-comments
+      - PROCESSED_COMMENTS_TOPIC=processed-comments
+      - CONSUMER_GROUP=comment-processor
+      - GRPC_HOST=sentiment-service
+      - GRPC_PORT=50051
+      - GRPC_TIMEOUT_SECONDS=5
+      - GRPC_MAX_RETRIES=4
+      - GRPC_BASE_BACKOFF=0.5
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_TTL_SECONDS=86400
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=comments
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=appsecret
+    depends_on:
+      - kafka
+      - sentiment-service
+      - redis
+      - postgres
+
+  rest-api:
+    build:
+      context: .
+      dockerfile: rest_api/Dockerfile
+    container_name: comment-rest-api
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=comments
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=appsecret
+      - DB_POOL_MAX_SIZE=10
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    restart: on-failure
+
+volumes:
+  kafka-data:
+  postgres-data:
