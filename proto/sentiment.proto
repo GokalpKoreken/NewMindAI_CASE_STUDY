@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package sentiment;
+
+service SentimentService {
+  rpc AnalyzeComment (AnalyzeCommentRequest) returns (AnalyzeCommentResponse);
+}
+
+message AnalyzeCommentRequest {
+  string comment_id = 1;
+  string text = 2;
+}
+
+message AnalyzeCommentResponse {
+  string comment_id = 1;
+  string sentiment = 2;
+  string original_text = 3;
+  int64 analyzed_at = 4;
+}
